@@ -81,15 +81,9 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
     // Application Constants
     const PREVIOUS_STARS = 3;
-    const isCanvas = typeof __firebase_config !== 'undefined';
-    let app, auth, db, appId;
-    let currentUser = null;
+    const STORAGE_KEY = 'good_girl_tracker_dates';
     let dates = [];
 
     // Quotes
@@ -194,77 +188,38 @@
       mainApp.classList.add('flex');
     }
 
-    // Firebase Setup & Initialization
-    if (isCanvas) {
-      const firebaseConfig = JSON.parse(__firebase_config);
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-      appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-      // Setup Auth
-      const initAuth = async () => {
+    // Initialize Local Storage
+    function initializeStorage() {
+      const storedDates = localStorage.getItem(STORAGE_KEY);
+      if (storedDates) {
         try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch (error) {
-          console.error("Auth error:", error);
-          hideLoader(); // Show UI anyway
+          dates = JSON.parse(storedDates);
+        } catch (e) {
+          console.error("Error reading storage:", e);
+          dates = [];
         }
-      };
-
-      initAuth();
-
-      // Listen for Auth Changes
-      onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        if (user) {
-          // Fetch data
-          const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'tracker', 'progress');
-          onSnapshot(
-            docRef,
-            (docSnap) => {
-              dates = docSnap.exists() ? (docSnap.data().dates || []) : [];
-              renderApp();
-              hideLoader();
-            },
-            (error) => {
-              console.error("Firestore error:", error);
-              hideLoader();
-            }
-          );
-        } else {
-          hideLoader();
-        }
-      });
-    } else {
-      // Fallback if not running in the proper environment
+      }
       hideLoader();
       renderApp();
     }
 
+    // Execute the setup
+    initializeStorage();
+
     // Handle Button Click
-    workBtn.addEventListener('click', async () => {
+    workBtn.addEventListener('click', () => {
       const todayStr = getTodayString();
       if (dates.includes(todayStr)) return;
 
-      // Optimistic Update
+      // Update Array
       dates.push(todayStr);
+      
+      // Save to Local Storage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dates));
+
+      // Update UI
       triggerBurst();
       renderApp();
-
-      // Save to Firebase
-      if (isCanvas && currentUser) {
-        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tracker', 'progress');
-        try {
-          await setDoc(docRef, { dates: dates }, { merge: true });
-        } catch (error) {
-          console.error("Error saving progress:", error);
-        }
-      }
     });
 
   </script>
