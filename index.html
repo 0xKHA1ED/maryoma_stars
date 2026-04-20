@@ -1,259 +1,272 @@
-import React, { useState, useEffect } from 'react';
-import { Star, Heart, Award, Sparkles, Trophy } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-
-// Initialize Firebase securely behind the scenes
-let app, auth, db, appId;
-const isCanvas = typeof __firebase_config !== 'undefined';
-
-if (isCanvas) {
-  const firebaseConfig = JSON.parse(__firebase_config);
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-}
-
-export default function App() {
-  // Set how many days she already completed before using the app!
-  const PREVIOUS_STARS = 3;
-
-  const [user, setUser] = useState(null);
-  const [dates, setDates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [burst, setBurst] = useState(false);
-  const [quote, setQuote] = useState("");
-
-  // Random cute encouraging quotes
-  const quotes = [
-    "Daddy is so proud of you! 💕",
-    "Such a good girl! ✨",
-    "Keep shining for Daddy! 🌟",
-    "Every step makes Daddy happy! 🌸",
-    "Daddy's perfect little star! 💫",
-    "Be a good girl and get to work! 💖",
-    "Making Daddy proud today! 🌷"
-  ];
-
-  useEffect(() => {
-    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  }, []);
-
-  // 1. Authenticate user to securely save their stars
-  useEffect(() => {
-    if (!isCanvas) {
-      setLoading(false);
-      return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Good Girl Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes burstAnim {
+      0% { transform: translate(0, 0) rotate(0deg) scale(0); opacity: 1; }
+      50% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1.5); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0); opacity: 0; }
     }
-
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (error) {
-        console.error("Auth error:", error);
-      }
-    };
-    initAuth();
-
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
-  // 2. Fetch the stars data from the cloud
-  useEffect(() => {
-    if (!isCanvas || !user) {
-      if (!isCanvas) setLoading(false);
-      return;
+    .animate-burst {
+      animation: burstAnim 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-rose-50 to-pink-100 min-h-screen relative font-sans antialiased text-gray-800">
 
-    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'tracker', 'progress');
-    const unsubscribe = onSnapshot(
-      docRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          setDates(docSnap.data().dates || []);
-        } else {
-          setDates([]);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Firestore error:", error);
-        setLoading(false);
-      }
-    );
+  <!-- Loading State -->
+  <div id="loader" class="min-h-screen bg-pink-50 flex items-center justify-center absolute inset-0 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-pink-400 w-8 h-8"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+  </div>
 
-    return () => unsubscribe();
-  }, [user]);
-
-  // Utility to get today's date formatted as YYYY-MM-DD
-  const getTodayString = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
-  const todayStr = getTodayString();
-  const hasWorkedToday = dates.includes(todayStr);
-
-  const handleWorkConfirm = async () => {
-    if (hasWorkedToday) return;
-
-    const newDates = [...dates, todayStr];
+  <!-- Main Application Wrapper -->
+  <div id="main-app" class="hidden min-h-screen items-center justify-center p-4 overflow-hidden relative">
     
-    // Trigger confetti star animation
-    setBurst(true);
-    setTimeout(() => setBurst(false), 2000);
+    <!-- Burst Animation Overlay -->
+    <div id="burst-container" class="absolute inset-0 pointer-events-none flex items-center justify-center z-50"></div>
 
-    // Save to database
-    if (isCanvas && user) {
-      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'tracker', 'progress');
-      try {
-        await setDoc(docRef, { dates: newDates }, { merge: true });
-      } catch (error) {
-        console.error("Error saving progress:", error);
-      }
-    } else {
-       // Fallback if disconnected
-       setDates(newDates);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
-        <Sparkles className="animate-spin text-pink-400 w-8 h-8" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-pink-100 flex items-center justify-center p-4 overflow-hidden relative">
+    <!-- Main App Card -->
+    <div class="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center relative z-10">
       
-      {/* Custom Keyframe Animations */}
-      <style>{`
-        @keyframes burstAnim {
-          0% { transform: translate(0, 0) rotate(0deg) scale(0); opacity: 1; }
-          50% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1.5); opacity: 1; }
-          100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0); opacity: 0; }
-        }
-        .animate-burst {
-          animation: burstAnim 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        @keyframes popIn {
-          0% { transform: scale(0); opacity: 0; }
-          70% { transform: scale(1.2); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-pop-in {
-          animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-      `}</style>
-
-      {/* Burst Animation Overlay (Triggers when button is clicked) */}
-      {burst && (
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-50">
-          {[...Array(15)].map((_, i) => (
-            <div key={i} className="absolute animate-burst" style={{
-              '--tx': `${(Math.random() - 0.5) * 350}px`,
-              '--ty': `${(Math.random() - 0.5) * 350}px`,
-              '--rot': `${Math.random() * 360}deg`,
-              animationDelay: `${Math.random() * 0.1}s`
-            }}>
-              <Star className="text-yellow-400 fill-yellow-400 w-10 h-10 drop-shadow-md" />
-            </div>
-          ))}
+      <!-- Header section -->
+      <div class="mb-8">
+        <div class="inline-flex items-center justify-center p-3 bg-pink-100 rounded-full mb-4 shadow-inner">
+           <!-- Heart Icon -->
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-pink-500 animate-pulse"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
         </div>
-      )}
-
-      {/* Main App Card */}
-      <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center relative z-10">
-        
-        {/* Header section */}
-        <div className="mb-8">
-          <div className="inline-flex items-center justify-center p-3 bg-pink-100 rounded-full mb-4 shadow-inner">
-             <Heart className="w-8 h-8 text-pink-500 fill-pink-500 animate-pulse" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight mb-2">
-            Good Girl Tracker
-          </h1>
-          <p className="text-pink-600 font-medium h-6">{quote}</p>
-        </div>
-
-        {/* Action Button */}
-        <div className="mb-10">
-          <button
-            onClick={handleWorkConfirm}
-            disabled={hasWorkedToday}
-            className={`relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl
-              ${hasWorkedToday 
-                ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white cursor-default scale-100' 
-                : 'bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer'
-              }`}
-          >
-            {hasWorkedToday ? (
-              <>
-                <Award className="w-6 h-6" />
-                Star Earned Today!
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-6 h-6" />
-                I Worked Today!
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Stats and Stars Grid */}
-        <div className="bg-gray-50/50 rounded-2xl p-6 border border-gray-100/50">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-700 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
-              Stars for Daddy:
-            </h2>
-            <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              {dates.length + PREVIOUS_STARS}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2 justify-center min-h-[80px] p-2 bg-white rounded-xl shadow-inner">
-            {(dates.length + PREVIOUS_STARS) === 0 ? (
-              <p className="text-gray-400 text-sm my-auto italic">
-                Time to earn your first star for Daddy! ✨
-              </p>
-            ) : (
-              <>
-                {/* Render the previously earned stars */}
-                {[...Array(PREVIOUS_STARS)].map((_, index) => (
-                  <div key={`prev-${index}`} className="animate-pop-in" style={{ animationDelay: `${index * 0.05}s` }}>
-                    <Star 
-                      className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow hover:scale-110 transition-transform cursor-pointer" 
-                      title="Earned previously"
-                    />
-                  </div>
-                ))}
-                
-                {/* Render the newly earned stars tracked by the app */}
-                {dates.map((date, index) => (
-                  <div key={date} className="animate-pop-in" style={{ animationDelay: `${(index + PREVIOUS_STARS) * 0.05}s` }}>
-                    <Star 
-                      className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow hover:scale-110 transition-transform cursor-pointer" 
-                      title={`Earned on ${date}`}
-                    />
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </div>
-
+        <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight mb-2">
+          Good Girl Tracker
+        </h1>
+        <p id="quote-display" class="text-pink-600 font-medium h-6"></p>
       </div>
+
+      <!-- Action Button -->
+      <div class="mb-10">
+        <button id="work-btn" class="relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer">
+          <!-- Button content dynamically inserted -->
+        </button>
+      </div>
+
+      <!-- Stats and Stars Grid -->
+      <div class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100/50">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+            <!-- Trophy Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-yellow-500"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            Stars for Daddy:
+          </h2>
+          <span id="total-stars" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+            0
+          </span>
+        </div>
+
+        <div id="stars-grid" class="flex flex-wrap gap-2 justify-center min-h-[80px] p-2 bg-white rounded-xl shadow-inner">
+          <!-- Stars dynamically inserted -->
+        </div>
+      </div>
+
     </div>
-  );
-}
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // Application Constants
+    const PREVIOUS_STARS = 3;
+    const isCanvas = typeof __firebase_config !== 'undefined';
+    let app, auth, db, appId;
+    let currentUser = null;
+    let dates = [];
+
+    // Quotes
+    const quotes = [
+      "Daddy is so proud of you! 💕",
+      "Such a good girl! ✨",
+      "Keep shining for Daddy! 🌟",
+      "Every step makes Daddy happy! 🌸",
+      "Daddy's perfect little star! 💫",
+      "Be a good girl and get to work! 💖",
+      "Making Daddy proud today! 🌷"
+    ];
+
+    // SVG Icons
+    const starSvg = (title, extraClasses = "w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow hover:scale-110 transition-transform cursor-pointer") => `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${extraClasses}"><title>${title}</title><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    `;
+    const sparklesSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`;
+    const awardSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>`;
+
+    // Initialize UI Elements
+    document.getElementById('quote-display').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+    const workBtn = document.getElementById('work-btn');
+    const starsGrid = document.getElementById('stars-grid');
+    const totalStars = document.getElementById('total-stars');
+
+    // Utility 
+    function getTodayString() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    // Render Logic
+    function renderApp() {
+      const todayStr = getTodayString();
+      const hasWorkedToday = dates.includes(todayStr);
+
+      // Render Button
+      if (hasWorkedToday) {
+        workBtn.disabled = true;
+        workBtn.className = "relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg bg-gradient-to-r from-green-400 to-emerald-400 text-white cursor-default scale-100";
+        workBtn.innerHTML = `${awardSvg} Star Earned Today!`;
+      } else {
+        workBtn.disabled = false;
+        workBtn.className = "relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer";
+        workBtn.innerHTML = `${sparklesSvg} I Worked Today!`;
+      }
+
+      // Render Total
+      const totalCount = dates.length + PREVIOUS_STARS;
+      totalStars.innerText = totalCount;
+
+      // Render Stars Grid
+      starsGrid.innerHTML = '';
+      if (totalCount === 0) {
+        starsGrid.innerHTML = `<p class="text-gray-400 text-sm my-auto italic">Time to earn your first star for Daddy! ✨</p>`;
+        return;
+      }
+
+      // 1. Render Previous Stars
+      for (let i = 0; i < PREVIOUS_STARS; i++) {
+        const starDiv = document.createElement('div');
+        starDiv.className = 'animate-pop-in';
+        starDiv.style.animationDelay = `${i * 0.05}s`;
+        starDiv.innerHTML = starSvg('Earned previously');
+        starsGrid.appendChild(starDiv);
+      }
+
+      // 2. Render Tracked Stars
+      dates.forEach((date, i) => {
+        const starDiv = document.createElement('div');
+        starDiv.className = 'animate-pop-in';
+        starDiv.style.animationDelay = `${(i + PREVIOUS_STARS) * 0.05}s`;
+        starDiv.innerHTML = starSvg(`Earned on ${date}`);
+        starsGrid.appendChild(starDiv);
+      });
+    }
+
+    // Burst Animation Trigger
+    function triggerBurst() {
+      const container = document.getElementById('burst-container');
+      container.innerHTML = ''; // Clear existing
+      
+      for(let i=0; i<15; i++) {
+        const div = document.createElement('div');
+        div.className = 'absolute animate-burst';
+        div.style.setProperty('--tx', `${(Math.random() - 0.5) * 350}px`);
+        div.style.setProperty('--ty', `${(Math.random() - 0.5) * 350}px`);
+        div.style.setProperty('--rot', `${Math.random() * 360}deg`);
+        div.style.animationDelay = `${Math.random() * 0.1}s`;
+        div.innerHTML = starSvg('', 'w-10 h-10 text-yellow-400 fill-yellow-400 drop-shadow-md');
+        container.appendChild(div);
+      }
+
+      setTimeout(() => { container.innerHTML = ''; }, 2000);
+    }
+
+    // Hide loading screen
+    function hideLoader() {
+      document.getElementById('loader').style.display = 'none';
+      const mainApp = document.getElementById('main-app');
+      mainApp.classList.remove('hidden');
+      mainApp.classList.add('flex');
+    }
+
+    // Firebase Setup & Initialization
+    if (isCanvas) {
+      const firebaseConfig = JSON.parse(__firebase_config);
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+      // Setup Auth
+      const initAuth = async () => {
+        try {
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+        } catch (error) {
+          console.error("Auth error:", error);
+          hideLoader(); // Show UI anyway
+        }
+      };
+
+      initAuth();
+
+      // Listen for Auth Changes
+      onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user) {
+          // Fetch data
+          const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'tracker', 'progress');
+          onSnapshot(
+            docRef,
+            (docSnap) => {
+              dates = docSnap.exists() ? (docSnap.data().dates || []) : [];
+              renderApp();
+              hideLoader();
+            },
+            (error) => {
+              console.error("Firestore error:", error);
+              hideLoader();
+            }
+          );
+        } else {
+          hideLoader();
+        }
+      });
+    } else {
+      // Fallback if not running in the proper environment
+      hideLoader();
+      renderApp();
+    }
+
+    // Handle Button Click
+    workBtn.addEventListener('click', async () => {
+      const todayStr = getTodayString();
+      if (dates.includes(todayStr)) return;
+
+      // Optimistic Update
+      dates.push(todayStr);
+      triggerBurst();
+      renderApp();
+
+      // Save to Firebase
+      if (isCanvas && currentUser) {
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tracker', 'progress');
+        try {
+          await setDoc(docRef, { dates: dates }, { merge: true });
+        } catch (error) {
+          console.error("Error saving progress:", error);
+        }
+      }
+    });
+
+  </script>
+</body>
+</html>
