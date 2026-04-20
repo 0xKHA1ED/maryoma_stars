@@ -1,0 +1,259 @@
+import React, { useState, useEffect } from 'react';
+import { Star, Heart, Award, Sparkles, Trophy } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+
+// Initialize Firebase securely behind the scenes
+let app, auth, db, appId;
+const isCanvas = typeof __firebase_config !== 'undefined';
+
+if (isCanvas) {
+  const firebaseConfig = JSON.parse(__firebase_config);
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+}
+
+export default function App() {
+  // Set how many days she already completed before using the app!
+  const PREVIOUS_STARS = 3;
+
+  const [user, setUser] = useState(null);
+  const [dates, setDates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [burst, setBurst] = useState(false);
+  const [quote, setQuote] = useState("");
+
+  // Random cute encouraging quotes
+  const quotes = [
+    "Daddy is so proud of you! 💕",
+    "Such a good girl! ✨",
+    "Keep shining for Daddy! 🌟",
+    "Every step makes Daddy happy! 🌸",
+    "Daddy's perfect little star! 💫",
+    "Be a good girl and get to work! 💖",
+    "Making Daddy proud today! 🌷"
+  ];
+
+  useEffect(() => {
+    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+  }, []);
+
+  // 1. Authenticate user to securely save their stars
+  useEffect(() => {
+    if (!isCanvas) {
+      setLoading(false);
+      return;
+    }
+
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Fetch the stars data from the cloud
+  useEffect(() => {
+    if (!isCanvas || !user) {
+      if (!isCanvas) setLoading(false);
+      return;
+    }
+
+    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'tracker', 'progress');
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setDates(docSnap.data().dates || []);
+        } else {
+          setDates([]);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firestore error:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Utility to get today's date formatted as YYYY-MM-DD
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  const todayStr = getTodayString();
+  const hasWorkedToday = dates.includes(todayStr);
+
+  const handleWorkConfirm = async () => {
+    if (hasWorkedToday) return;
+
+    const newDates = [...dates, todayStr];
+    
+    // Trigger confetti star animation
+    setBurst(true);
+    setTimeout(() => setBurst(false), 2000);
+
+    // Save to database
+    if (isCanvas && user) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'tracker', 'progress');
+      try {
+        await setDoc(docRef, { dates: newDates }, { merge: true });
+      } catch (error) {
+        console.error("Error saving progress:", error);
+      }
+    } else {
+       // Fallback if disconnected
+       setDates(newDates);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
+        <Sparkles className="animate-spin text-pink-400 w-8 h-8" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-pink-100 flex items-center justify-center p-4 overflow-hidden relative">
+      
+      {/* Custom Keyframe Animations */}
+      <style>{`
+        @keyframes burstAnim {
+          0% { transform: translate(0, 0) rotate(0deg) scale(0); opacity: 1; }
+          50% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1.5); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0); opacity: 0; }
+        }
+        .animate-burst {
+          animation: burstAnim 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes popIn {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+          animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+      `}</style>
+
+      {/* Burst Animation Overlay (Triggers when button is clicked) */}
+      {burst && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-50">
+          {[...Array(15)].map((_, i) => (
+            <div key={i} className="absolute animate-burst" style={{
+              '--tx': `${(Math.random() - 0.5) * 350}px`,
+              '--ty': `${(Math.random() - 0.5) * 350}px`,
+              '--rot': `${Math.random() * 360}deg`,
+              animationDelay: `${Math.random() * 0.1}s`
+            }}>
+              <Star className="text-yellow-400 fill-yellow-400 w-10 h-10 drop-shadow-md" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Main App Card */}
+      <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center relative z-10">
+        
+        {/* Header section */}
+        <div className="mb-8">
+          <div className="inline-flex items-center justify-center p-3 bg-pink-100 rounded-full mb-4 shadow-inner">
+             <Heart className="w-8 h-8 text-pink-500 fill-pink-500 animate-pulse" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight mb-2">
+            Good Girl Tracker
+          </h1>
+          <p className="text-pink-600 font-medium h-6">{quote}</p>
+        </div>
+
+        {/* Action Button */}
+        <div className="mb-10">
+          <button
+            onClick={handleWorkConfirm}
+            disabled={hasWorkedToday}
+            className={`relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl
+              ${hasWorkedToday 
+                ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white cursor-default scale-100' 
+                : 'bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer'
+              }`}
+          >
+            {hasWorkedToday ? (
+              <>
+                <Award className="w-6 h-6" />
+                Star Earned Today!
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-6 h-6" />
+                I Worked Today!
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Stats and Stars Grid */}
+        <div className="bg-gray-50/50 rounded-2xl p-6 border border-gray-100/50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-700 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              Stars for Daddy:
+            </h2>
+            <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+              {dates.length + PREVIOUS_STARS}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2 justify-center min-h-[80px] p-2 bg-white rounded-xl shadow-inner">
+            {(dates.length + PREVIOUS_STARS) === 0 ? (
+              <p className="text-gray-400 text-sm my-auto italic">
+                Time to earn your first star for Daddy! ✨
+              </p>
+            ) : (
+              <>
+                {/* Render the previously earned stars */}
+                {[...Array(PREVIOUS_STARS)].map((_, index) => (
+                  <div key={`prev-${index}`} className="animate-pop-in" style={{ animationDelay: `${index * 0.05}s` }}>
+                    <Star 
+                      className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow hover:scale-110 transition-transform cursor-pointer" 
+                      title="Earned previously"
+                    />
+                  </div>
+                ))}
+                
+                {/* Render the newly earned stars tracked by the app */}
+                {dates.map((date, index) => (
+                  <div key={date} className="animate-pop-in" style={{ animationDelay: `${(index + PREVIOUS_STARS) * 0.05}s` }}>
+                    <Star 
+                      className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow hover:scale-110 transition-transform cursor-pointer" 
+                      title={`Earned on ${date}`}
+                    />
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
