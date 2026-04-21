@@ -26,24 +26,18 @@
 </head>
 <body class="bg-gradient-to-br from-pink-100 via-rose-50 to-pink-100 min-h-screen relative font-sans antialiased text-gray-800">
 
-  <!-- Loading State -->
   <div id="loader" class="min-h-screen bg-pink-50 flex items-center justify-center absolute inset-0 z-50">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-pink-400 w-8 h-8"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
   </div>
 
-  <!-- Main Application Wrapper -->
   <div id="main-app" class="hidden min-h-screen items-center justify-center p-4 overflow-hidden relative">
     
-    <!-- Burst Animation Overlay -->
     <div id="burst-container" class="absolute inset-0 pointer-events-none flex items-center justify-center z-50"></div>
 
-    <!-- Main App Card -->
     <div class="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center relative z-10">
       
-      <!-- Header section -->
       <div class="mb-8">
         <div class="inline-flex items-center justify-center p-3 bg-pink-100 rounded-full mb-4 shadow-inner">
-           <!-- Heart Icon -->
            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-pink-500 animate-pulse"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
         </div>
         <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight mb-2">
@@ -52,18 +46,14 @@
         <p id="quote-display" class="text-pink-600 font-medium h-6"></p>
       </div>
 
-      <!-- Action Button -->
       <div class="mb-10">
         <button id="work-btn" class="relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer">
-          <!-- Button content dynamically inserted -->
-        </button>
+          </button>
       </div>
 
-      <!-- Stats and Stars Grid -->
       <div class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100/50">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
-            <!-- Trophy Icon -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-yellow-500"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
             Stars for Daddy:
           </h2>
@@ -73,8 +63,7 @@
         </div>
 
         <div id="stars-grid" class="flex flex-wrap gap-2 justify-center min-h-[80px] p-2 bg-white rounded-xl shadow-inner">
-          <!-- Stars dynamically inserted -->
-        </div>
+          </div>
       </div>
 
     </div>
@@ -82,7 +71,7 @@
 
   <script type="module">
     // Application Constants
-    const PREVIOUS_STARS = 3;
+    const PREVIOUS_STARS = 4;
     const STORAGE_KEY = 'good_girl_tracker_dates';
     let dates = [];
 
@@ -110,9 +99,14 @@
     const starsGrid = document.getElementById('stars-grid');
     const totalStars = document.getElementById('total-stars');
 
-    // Utility 
+    // Utility - UPDATED TO USE LOCAL TIMEZONE
     function getTodayString() {
-      return new Date().toISOString().split('T')[0];
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
     }
 
     // Render Logic
