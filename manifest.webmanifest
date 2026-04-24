@@ -1,0 +1,17 @@
+{
+  "name": "Maryoma Stars",
+  "short_name": "Stars",
+  "description": "A tiny magical ritual that turns worked days into stars, praise, and collectible rewards.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fffafc",
+  "theme_color": "#ff8fc7",
+  "icons": [
+    {
+      "src": "./assets/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -2,220 +2,221 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Good Girl Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @keyframes burstAnim {
-      0% { transform: translate(0, 0) rotate(0deg) scale(0); opacity: 1; }
-      50% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1.5); opacity: 1; }
-      100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0); opacity: 0; }
-    }
-    .animate-burst {
-      animation: burstAnim 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    }
-    @keyframes popIn {
-      0% { transform: scale(0); opacity: 0; }
-      70% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .animate-pop-in {
-      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ff8fc7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="A tiny magical ritual for turning worked days into stars, praise, and collectible little rewards.">
+  <title>Maryoma Stars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/app-icon.svg">
+  <link rel="apple-touch-icon" href="./assets/icons/app-icon.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
 </head>
-<body class="bg-gradient-to-br from-pink-100 via-rose-50 to-pink-100 min-h-screen relative font-sans antialiased text-gray-800">
+<body>
+  <div class="page-shell">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <div class="ambient ambient-three"></div>
+    <div id="celebration-layer" class="celebration-layer" aria-hidden="true"></div>
 
-  <div id="loader" class="min-h-screen bg-pink-50 flex items-center justify-center absolute inset-0 z-50">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-pink-400 w-8 h-8"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-  </div>
-
-  <div id="main-app" class="hidden min-h-screen items-center justify-center p-4 overflow-hidden relative">
-    
-    <div id="burst-container" class="absolute inset-0 pointer-events-none flex items-center justify-center z-50"></div>
-
-    <div class="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center relative z-10">
-      
-      <div class="mb-8">
-        <div class="inline-flex items-center justify-center p-3 bg-pink-100 rounded-full mb-4 shadow-inner">
-           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-pink-500 animate-pulse"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+    <div class="phone-frame">
+      <header class="topbar">
+        <div class="brand-stack">
+          <p class="eyebrow">Maryoma Stars</p>
+          <h1 class="brand-title">Personal Star Shrine</h1>
         </div>
-        <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight mb-2">
-          Good Girl Tracker
-        </h1>
-        <p id="quote-display" class="text-pink-600 font-medium h-6"></p>
-      </div>
+        <button class="icon-button" type="button" data-action="open-settings" aria-label="Open settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.2 2.7a1 1 0 0 1 1.6 0l1 1.4a1 1 0 0 0 1 .4l1.7-.3a1 1 0 0 1 1.2 1.1l-.2 1.7a1 1 0 0 0 .4.9l1.4 1a1 1 0 0 1 0 1.6l-1.4 1a1 1 0 0 0-.4 1l.3 1.7a1 1 0 0 1-1.1 1.2l-1.7-.2a1 1 0 0 0-1 .4l-1 1.4a1 1 0 0 1-1.6 0l-1-1.4a1 1 0 0 0-1-.4l-1.7.3a1 1 0 0 1-1.2-1.1l.2-1.7a1 1 0 0 0-.4-1l-1.4-1a1 1 0 0 1 0-1.6l1.4-1a1 1 0 0 0 .4-.9l-.3-1.7A1 1 0 0 1 7.3 4.2l1.7.2a1 1 0 0 0 1-.4l1.2-1.3Z"></path>
+            <circle cx="12" cy="12" r="3.1"></circle>
+          </svg>
+        </button>
+      </header>
 
-      <div class="mb-10">
-        <button id="work-btn" class="relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer">
-          </button>
-      </div>
+      <div id="status-banner" class="status-banner" aria-live="polite"></div>
 
-      <div class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100/50">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-yellow-500"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
-            Stars for Daddy:
-          </h2>
-          <span id="total-stars" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            0
-          </span>
-        </div>
+      <main class="screen-stack">
+        <section id="screen-today" class="screen is-active" data-screen="today" aria-labelledby="today-tab"></section>
+        <section id="screen-sky" class="screen" data-screen="sky" aria-labelledby="sky-tab"></section>
+        <section id="screen-rewards" class="screen" data-screen="rewards" aria-labelledby="rewards-tab"></section>
+        <section id="screen-notes" class="screen" data-screen="notes" aria-labelledby="notes-tab"></section>
+      </main>
 
-        <div id="stars-grid" class="flex flex-wrap gap-2 justify-center min-h-[80px] p-2 bg-white rounded-xl shadow-inner">
-          </div>
-      </div>
-
+      <nav class="bottom-nav" aria-label="Primary">
+        <button id="today-tab" class="nav-button is-active" type="button" data-tab="today">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2.6 14.6 8l5.9.9-4.3 4.2 1 6-5.2-2.8-5.2 2.8 1-6L3.5 8l5.9-.9 2.6-4.5Z"></path>
+          </svg>
+          <span>Today</span>
+        </button>
+        <button id="sky-tab" class="nav-button" type="button" data-tab="sky">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14.8 3.2a8.8 8.8 0 1 0 6 15.2A8 8 0 1 1 14.8 3.2Z"></path>
+          </svg>
+          <span>Sky</span>
+        </button>
+        <button id="rewards-tab" class="nav-button" type="button" data-tab="rewards">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 4.5h12l1.1 3.8c.4 1.4-.5 2.9-1.9 3.1l-1.8.3-1.8 7.8H10.4L8.6 11.7l-1.8-.3A2.4 2.4 0 0 1 4.9 8.3L6 4.5Z"></path>
+            <path d="M8.2 4.5c0 1.4 1.2 2.6 2.6 2.6h2.4c1.4 0 2.6-1.2 2.6-2.6"></path>
+          </svg>
+          <span>Rewards</span>
+        </button>
+        <button id="notes-tab" class="nav-button" type="button" data-tab="notes">
+          <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 7.4c0-1.3 1-2.4 2.4-2.4h10.2c1.3 0 2.4 1 2.4 2.4v9.3c0 1.3-1 2.4-2.4 2.4H6.9c-1.3 0-2.4-1-2.4-2.4V7.4Z"></path>
+            <path d="m5.2 7 6.8 5.4L18.8 7"></path>
+          </svg>
+          <span>Notes</span>
+        </button>
+      </nav>
     </div>
   </div>
 
-  <script type="module">
-    // Application Constants
-    const PREVIOUS_STARS = 4;
-    const STORAGE_KEY = 'good_girl_tracker_dates';
-    let dates = [];
+  <div id="settings-backdrop" class="sheet-backdrop" hidden></div>
 
-    // Quotes
-    const quotes = [
-      "Daddy is so proud of you! 💕",
-      "Such a good girl! ✨",
-      "Keep shining for Daddy! 🌟",
-      "Every step makes Daddy happy! 🌸",
-      "Daddy's perfect little star! 💫",
-      "Be a good girl and get to work! 💖",
-      "Making Daddy proud today! 🌷"
-    ];
+  <aside id="settings-sheet" class="settings-sheet" aria-hidden="true" aria-labelledby="settings-title">
+    <div class="sheet-header">
+      <div>
+        <p class="eyebrow">Little Controls</p>
+        <h2 id="settings-title">Shrine Settings</h2>
+      </div>
+      <button class="icon-button" type="button" data-action="close-settings" aria-label="Close settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12"></path>
+          <path d="M18 6 6 18"></path>
+        </svg>
+      </button>
+    </div>
 
-    // SVG Icons
-    const starSvg = (title, extraClasses = "w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow hover:scale-110 transition-transform cursor-pointer") => `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${extraClasses}"><title>${title}</title><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    `;
-    const sparklesSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`;
-    const awardSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>`;
+    <form id="settings-form" class="sheet-content">
+      <section class="sheet-section">
+        <div class="section-heading">
+          <p class="eyebrow">Tone</p>
+          <h3>Ritual Mood</h3>
+        </div>
 
-    // Initialize UI Elements
-    document.getElementById('quote-display').innerText = quotes[Math.floor(Math.random() * quotes.length)];
-    const workBtn = document.getElementById('work-btn');
-    const starsGrid = document.getElementById('stars-grid');
-    const totalStars = document.getElementById('total-stars');
+        <label class="field">
+          <span>Nickname</span>
+          <input name="nickname" type="text" maxlength="24" autocomplete="nickname">
+        </label>
 
-    // Utility - UPDATED TO USE LOCAL TIMEZONE
-    function getTodayString() {
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
-    }
+        <label class="field">
+          <span>Title</span>
+          <input name="title" type="text" maxlength="32" autocomplete="organization-title">
+        </label>
 
-    // Render Logic
-    function renderApp() {
-      const todayStr = getTodayString();
-      const hasWorkedToday = dates.includes(todayStr);
+        <label class="field">
+          <span>Tone pack</span>
+          <select name="tonePack" id="tone-pack-select"></select>
+        </label>
 
-      // Render Button
-      if (hasWorkedToday) {
-        workBtn.disabled = true;
-        workBtn.className = "relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg bg-gradient-to-r from-green-400 to-emerald-400 text-white cursor-default scale-100";
-        workBtn.innerHTML = `${awardSvg} Star Earned Today!`;
-      } else {
-        workBtn.disabled = false;
-        workBtn.className = "relative w-full py-4 px-6 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:-translate-y-1 hover:from-pink-500 hover:to-rose-500 text-white active:scale-95 cursor-pointer";
-        workBtn.innerHTML = `${sparklesSvg} I Worked Today!`;
-      }
+        <p id="tone-preview" class="helper-copy"></p>
+      </section>
 
-      // Render Total
-      const totalCount = dates.length + PREVIOUS_STARS;
-      totalStars.innerText = totalCount;
+      <section class="sheet-section">
+        <div class="section-heading">
+          <p class="eyebrow">Comfort</p>
+          <h3>Daily Use</h3>
+        </div>
 
-      // Render Stars Grid
-      starsGrid.innerHTML = '';
-      if (totalCount === 0) {
-        starsGrid.innerHTML = `<p class="text-gray-400 text-sm my-auto italic">Time to earn your first star for Daddy! ✨</p>`;
-        return;
-      }
+        <label class="field">
+          <span>Timezone</span>
+          <input name="timeZone" list="timezone-list" spellcheck="false" autocomplete="off">
+        </label>
 
-      // 1. Render Previous Stars
-      for (let i = 0; i < PREVIOUS_STARS; i++) {
-        const starDiv = document.createElement('div');
-        starDiv.className = 'animate-pop-in';
-        starDiv.style.animationDelay = `${i * 0.05}s`;
-        starDiv.innerHTML = starSvg('Earned previously');
-        starsGrid.appendChild(starDiv);
-      }
+        <label class="field">
+          <span>Motion</span>
+          <select name="motion">
+            <option value="system">Match system</option>
+            <option value="on">Always on</option>
+            <option value="off">Reduced</option>
+          </select>
+        </label>
 
-      // 2. Render Tracked Stars
-      dates.forEach((date, i) => {
-        const starDiv = document.createElement('div');
-        starDiv.className = 'animate-pop-in';
-        starDiv.style.animationDelay = `${(i + PREVIOUS_STARS) * 0.05}s`;
-        starDiv.innerHTML = starSvg(`Earned on ${date}`);
-        starsGrid.appendChild(starDiv);
-      });
-    }
+        <label class="field field-toggle">
+          <span>Sound and tiny chime</span>
+          <input name="sound" type="checkbox">
+        </label>
 
-    // Burst Animation Trigger
-    function triggerBurst() {
-      const container = document.getElementById('burst-container');
-      container.innerHTML = ''; // Clear existing
-      
-      for(let i=0; i<15; i++) {
-        const div = document.createElement('div');
-        div.className = 'absolute animate-burst';
-        div.style.setProperty('--tx', `${(Math.random() - 0.5) * 350}px`);
-        div.style.setProperty('--ty', `${(Math.random() - 0.5) * 350}px`);
-        div.style.setProperty('--rot', `${Math.random() * 360}deg`);
-        div.style.animationDelay = `${Math.random() * 0.1}s`;
-        div.innerHTML = starSvg('', 'w-10 h-10 text-yellow-400 fill-yellow-400 drop-shadow-md');
-        container.appendChild(div);
-      }
+        <label class="field">
+          <span>Reminder time</span>
+          <input name="reminderTime" type="time">
+        </label>
 
-      setTimeout(() => { container.innerHTML = ''; }, 2000);
-    }
+        <button class="secondary-button" type="button" data-action="download-reminder">
+          Download Daily Reminder
+        </button>
+      </section>
 
-    // Hide loading screen
-    function hideLoader() {
-      document.getElementById('loader').style.display = 'none';
-      const mainApp = document.getElementById('main-app');
-      mainApp.classList.remove('hidden');
-      mainApp.classList.add('flex');
-    }
+      <section class="sheet-section">
+        <div class="section-heading">
+          <p class="eyebrow">Backup</p>
+          <h3>Keep It Safe</h3>
+        </div>
 
-    // Initialize Local Storage
-    function initializeStorage() {
-      const storedDates = localStorage.getItem(STORAGE_KEY);
-      if (storedDates) {
-        try {
-          dates = JSON.parse(storedDates);
-        } catch (e) {
-          console.error("Error reading storage:", e);
-          dates = [];
-        }
-      }
-      hideLoader();
-      renderApp();
-    }
+        <div class="button-row">
+          <button class="secondary-button" type="button" data-action="download-backup">Export backup</button>
+          <button class="secondary-button" type="button" data-action="import-backup">Import backup</button>
+        </div>
+      </section>
 
-    // Execute the setup
-    initializeStorage();
+      <section class="sheet-section">
+        <div class="section-heading">
+          <p class="eyebrow">Sync</p>
+          <h3>Supabase Shrine Link</h3>
+        </div>
 
-    // Handle Button Click
-    workBtn.addEventListener('click', () => {
-      const todayStr = getTodayString();
-      if (dates.includes(todayStr)) return;
+        <p id="sync-status-copy" class="helper-copy"></p>
 
-      // Update Array
-      dates.push(todayStr);
-      
-      // Save to Local Storage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dates));
+        <label class="field">
+          <span>Supabase URL</span>
+          <input name="supabaseUrl" type="url" inputmode="url" spellcheck="false" autocomplete="off" placeholder="https://your-project.supabase.co">
+        </label>
 
-      // Update UI
-      triggerBurst();
-      renderApp();
-    });
+        <label class="field">
+          <span>Supabase anon key</span>
+          <textarea name="supabaseAnonKey" rows="3" spellcheck="false" placeholder="sb_publishable_..."></textarea>
+        </label>
 
-  </script>
+        <label class="field">
+          <span>Email for magic link</span>
+          <input name="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+        </label>
+
+        <div class="button-row">
+          <button id="magic-link-button" class="primary-button" type="button" data-action="send-magic-link">
+            Send Magic Link
+          </button>
+          <button id="sign-out-button" class="secondary-button" type="button" data-action="sign-out">
+            Sign Out
+          </button>
+        </div>
+
+        <p class="helper-copy">
+          Public Supabase keys are safe to ship here as long as your `worked_days` table uses Row Level Security and user-scoped policies.
+        </p>
+      </section>
+    </form>
+  </aside>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <input id="backup-input" type="file" hidden accept="application/json">
+  <datalist id="timezone-list"></datalist>
+
+  <div id="loading-curtain" class="loading-curtain">
+    <div class="loading-card">
+      <div class="loading-star"></div>
+      <p>Polishing the shrine...</p>
+    </div>
+  </div>
+
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
