@@ -987,7 +987,10 @@ function render() {
     state.ui.skyMonth = getCurrentMonthKey(state.settings.timeZone);
   }
 
-  const derived = deriveAll(state.workedDates, todayDate, state.ui.skyMonth);
+  // Combine authoritative Supabase dates with any offline-queued claims so the
+  // UI always reflects the full picture while a sync is pending or in-flight.
+  const effectiveDates = mergeDates(state.workedDates, state.pendingClaims);
+  const derived = deriveAll(effectiveDates, todayDate, state.ui.skyMonth);
   const theme = applyTheme(todayDate);
   const syncState = getSyncState();
 
@@ -1092,22 +1095,22 @@ async function syncWithSupabase() {
   render();
 
   try {
-    const localDates = mergeDates(state.workedDates, state.pendingClaims);
-
-    if (localDates.length) {
-      const syncResult = await supabaseState.manager.syncWorkedDays(localDates, supabaseState.user.id);
+    // Push any offline-queued claims to Supabase first.
+    if (state.pendingClaims.length) {
+      const syncResult = await supabaseState.manager.syncWorkedDays(state.pendingClaims, supabaseState.user.id);
       if (syncResult.error) {
         throw syncResult.error;
       }
     }
 
+    // Supabase is the authoritative source — replace local dates entirely.
     const remoteResult = await supabaseState.manager.fetchWorkedDays();
 
     if (remoteResult.error) {
       throw remoteResult.error;
     }
 
-    state.workedDates = mergeDates(localDates, remoteResult.dates);
+    state.workedDates = remoteResult.dates;
     state.pendingClaims = [];
     state.sync.lastSyncAt = new Date().toISOString();
     state.sync.lastError = "";
@@ -1251,7 +1254,7 @@ function playClaimFeedback(outcome) {
 
 async function claimToday() {
   const todayDate = getTodayDate();
-  const previousDerived = deriveAll(state.workedDates, todayDate, state.ui.skyMonth);
+  const previousDerived = deriveAll(mergeDates(state.workedDates, state.pendingClaims), todayDate, state.ui.skyMonth);
 
   if (previousDerived.hasWorkedToday) {
     return;
@@ -1278,7 +1281,7 @@ async function claimToday() {
 
   saveState(state);
 
-  const nextDerived = deriveAll(state.workedDates, todayDate, state.ui.skyMonth);
+  const nextDerived = deriveAll(mergeDates(state.workedDates, state.pendingClaims), todayDate, state.ui.skyMonth);
   runtime.lastClaimOutcome = deriveClaimOutcome(previousDerived, nextDerived, todayDate);
   launchCelebration(runtime.lastClaimOutcome);
   playClaimFeedback(runtime.lastClaimOutcome);
@@ -1363,6 +1366,11 @@ async function handleImportFile(file) {
     const text = await file.text();
     const imported = JSON.parse(text);
     state = mergeImportedBackup(state, imported);
+
+    // Queue all imported worked dates as pending claims so they get pushed to
+    // Supabase on the next sync, making them available on every device.
+    state.pendingClaims = mergeDates(state.pendingClaims, state.workedDates);
+
     saveAndRender();
     showToast("Backup imported into the shrine.");
 
