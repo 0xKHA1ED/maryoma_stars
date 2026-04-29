@@ -35,7 +35,6 @@ const runtime = {
   isBooting: true,
   syncBusy: false,
   supabaseReady: false,
-  serviceWorkerReady: false,
 };
 
 const supabaseState = {
@@ -230,12 +229,11 @@ function saveAndRender() {
 function getSyncState() {
   const hasConfig = Boolean(state.settings.supabaseUrl && state.settings.supabaseAnonKey);
   const pendingCount = state.pendingClaims.length;
-  const isOffline = !navigator.onLine;
 
   if (state.sync.lastError) {
     return {
       kind: "warning",
-      label: "Sync sleepy",
+      label: "Sync error",
       copy: state.sync.lastError,
     };
   }
@@ -244,18 +242,16 @@ function getSyncState() {
     return {
       kind: "busy",
       label: "Syncing",
-      copy: "Updating your shrine in the background.",
+      copy: "Updating your shrine.",
     };
   }
 
   if (supabaseState.user) {
-    if (pendingCount > 0 || isOffline) {
+    if (pendingCount > 0) {
       return {
         kind: "queued",
-        label: pendingCount > 0 ? `${pendingCount} queued` : "Offline",
-        copy: pendingCount > 0
-          ? "Stored locally and waiting to sync."
-          : "Offline-safe local mode. New claims will queue for sync.",
+        label: `${pendingCount} pending`,
+        copy: "A few stars are queued to sync.",
       };
     }
 
@@ -272,14 +268,14 @@ function getSyncState() {
     return {
       kind: "ready",
       label: "Magic link ready",
-      copy: "Add your email and send a link to turn on cloud sync.",
+      copy: "Add your email and send a magic link to sign in.",
     };
   }
 
   return {
     kind: "local",
-    label: "Local shrine",
-    copy: "Everything works offline here. Add Supabase in settings for device sync.",
+    label: "Not signed in",
+    copy: "Sign in with a magic link to sync across devices.",
   };
 }
 
@@ -1265,17 +1261,12 @@ async function claimToday() {
   state.ui.selectedSkyDate = todayDate;
 
   if (supabaseState.user) {
-    if (!navigator.onLine) {
-      state.pendingClaims = mergeDates(state.pendingClaims, [todayDate]);
-    } else {
-      const syncResult = await supabaseState.manager.syncWorkedDay(todayDate, supabaseState.user.id);
+    const syncResult = await supabaseState.manager.syncWorkedDay(todayDate, supabaseState.user.id);
 
-      if (syncResult.error) {
-        state.pendingClaims = mergeDates(state.pendingClaims, [todayDate]);
-        state.sync.lastError = syncResult.error.message || "Saved locally and queued for sync.";
-      } else {
-        state.sync.lastError = "";
-      }
+    if (syncResult.error) {
+      state.sync.lastError = syncResult.error.message || "Could not save to the shrine.";
+    } else {
+      state.sync.lastError = "";
     }
   }
 
@@ -1288,7 +1279,7 @@ async function claimToday() {
   render();
   showToast(`Star claimed for ${formatLongDate(todayDate)}.`);
 
-  if (supabaseState.user && navigator.onLine) {
+  if (supabaseState.user) {
     syncWithSupabase();
   }
 }
@@ -1374,7 +1365,7 @@ async function handleImportFile(file) {
     saveAndRender();
     showToast("Backup imported into the shrine.");
 
-    if (supabaseState.user && navigator.onLine) {
+    if (supabaseState.user) {
       syncWithSupabase();
     }
   } catch (error) {
@@ -1479,19 +1470,6 @@ function handleDocumentClick(event) {
   }
 }
 
-async function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) {
-    return;
-  }
-
-  try {
-    await navigator.serviceWorker.register("./service-worker.js");
-    runtime.serviceWorkerReady = true;
-  } catch (error) {
-    console.warn("Service worker registration failed.", error);
-  }
-}
-
 function attachEventListeners() {
   document.addEventListener("click", handleDocumentClick);
   refs.settingsBackdrop.addEventListener("click", closeSettings);
@@ -1500,22 +1478,20 @@ function attachEventListeners() {
     const [file] = event.target.files;
     handleImportFile(file);
   });
-  window.addEventListener("online", () => {
-    showToast("Back online. The shrine will try syncing any queued stars.");
-    syncWithSupabase();
-    render();
-  });
-  window.addEventListener("offline", () => {
-    showToast("Offline mode is okay. New stars stay safe locally.");
-    render();
-  });
 }
 
 async function init() {
   populateTonePackOptions();
   populateTimeZoneList();
   attachEventListeners();
-  await registerServiceWorker();
+
+  // Unregister any previously installed service workers.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((reg) => reg.unregister());
+    });
+  }
+
   await initializeSupabase();
   render();
 }
